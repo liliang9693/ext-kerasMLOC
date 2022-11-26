@@ -1,0 +1,25 @@
+{
+  "name": {
+    "zh-cn": "行空板机器学习",
+    "en": "unihiker ML"
+  },
+  "description": {
+    "zh-cn": "基于tensorflow和keras的机器学习库实现物体分类功能",
+    "en": "unihiker ML"
+  },
+  "author": "liliang",
+  "email": "969316753@qq.com",
+  "license": "MIT",
+  "isBoard": false,
+  "id": "kerasMLOC",
+  "platform": ["win","mac","web","linux"],
+  "version": "0.0.1",
+  "asset": {
+	"python": {
+		"dir": "python/",
+		"main": "main.ts",
+		"dependencies": {
+      }
+  }
+}
+}
