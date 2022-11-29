@@ -29,15 +29,16 @@
 
 ## Blocks
 
-![](./python/_images/bloks.png)
+![](./python/_images/blocks.png)
 
 
 
 ## Examples
-
-- 导入图片训练模型：
+- 使用opencv从摄像头采集图片数据：
+![](./python/_images/examples0.png)
+- 导入图片训练模型，产出模型文件：
 ![](./python/_images/examples1.png)
-- 使用一张图片进行预测：
+- 导入模型文件，使用一张图片进行预测：
 ![](./python/_images/examples2.png)
 - 使用opencv视频流进行实时识别：
 ![](./python/_images/examples3.png)
@@ -59,3 +60,4 @@ unihiker        |             |              |             | √
 
 * V0.0.1  基础功能完成
 * V0.0.2  简化积木
+* V0.0.3  增加opencv采集照片功能，增加实时识别功能，调整积木

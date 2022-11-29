@@ -10,6 +10,84 @@ enum ACT {
 namespace kerasMLOC{
 
 
+
+    //% block="初始化摄像头直到成功 编号[CAMNUM]" blockType="command"
+    //% CAMNUM.shadow="number" CAMNUM.defl="0"
+    export function readcap(parameter: any, block: any) {
+        let num=parameter.CAMNUM.code;
+ 
+        Generator.addImport(`import cv2\nimport numpy as np`)
+        
+        Generator.addCode(`cap = cv2.VideoCapture(${num})`)
+        Generator.addCode(`cap.set(cv2.CAP_PROP_FRAME_WIDTH, 240)`)
+        Generator.addCode(`cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 320)`)
+        Generator.addCode(`cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)`)
+        Generator.addCode(`cv2.namedWindow('cvwindow',cv2.WND_PROP_FULLSCREEN)`)
+        Generator.addCode(`cv2.setWindowProperty('cvwindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)`)
+        Generator.addCode(`while not cap.isOpened():
+    continue`)     
+    }
+
+
+    //% block="读取摄像头一帧图片" blockType="command"
+    export function readcapcapture(parameter: any, block: any) {
+
+        Generator.addCode(`cv2.waitKey(5)
+cvimg_success, img_src = cap.read()
+cvimg_h, cvimg_w, cvimg_c = img_src.shape
+cvimg_w1 = cvimg_h*240//320
+cvimg_x1 = (cvimg_w-cvimg_w1)//2
+img_src = img_src[:, cvimg_x1:cvimg_x1+cvimg_w1]
+img_src = cv2.resize(img_src, (240, 320))
+cvimg_src=img_src.copy()
+cv2.imshow('cvwindow', cvimg_src)
+`)
+
+    }
+
+
+    //% block="按下[BUTTON]保存一张图片到文件夹 路径[PATH] 分类名称[NAME]" blockType="command"
+    //% PATH.shadow="string" PATH.defl="/root/dataset_object_classification"
+    //% NAME.shadow="string" NAME.defl="01Apple"
+    //% BUTTON.shadow="dropdown" BUTTON.options="BUTTON"
+    export function saveImage(parameter: any, block: any) {
+        let path=parameter.PATH.code;
+        let name=parameter.NAME.code;
+        let button=parameter.BUTTON.code;
+
+        path=replaceQuotationMarks(path)
+        name=replaceQuotationMarks(name)
+
+        Generator.addImport(`import datetime\nimport os`)
+        Generator.addCode(`if cv2.waitKey(10) == ord('${button}'):
+    img_dir_path ="${path}/${name}/"
+    img_name_path=str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f'))+".png"
+    img_save_path=img_dir_path+img_name_path
+    print("save image:",img_save_path)
+    try:
+        if not os.path.exists(img_save_path):
+            print("The folder does not exist,created automatically")
+            os.system("mkdir -p ${path}/${name}/")
+    except IOError:
+        print("IOError,created automatically")
+        os.system("mkdir -p ${path}/${name}/")
+    cv2.imwrite(img_save_path, img_src)
+    rectangular = np.array([ [5,5],[5,40], [232,40], [232,5] ])
+    cv2.fillConvexPoly(cvimg_src, rectangular, (233, 236, 239))
+    cv2.putText(cvimg_src, '${name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (50, 200, 0), 2)
+    cv2.rectangle(cvimg_src, (5,5,230,310), (0,255,0), 2)
+    cv2.imshow('cvwindow', cvimg_src)
+    cv2.waitKey(5)
+`)
+
+ 
+    }
+    
+
+    //% block="---"
+    export function noteSep2() {
+
+    }
     //% block="导入图片数据集 路径[PATH] 含[CLA]个分类" blockType="command"
     //% PATH.shadow="string" PATH.defl="/root/dataset_object_classification"
     //% CLA.shadow="number" CLA.defl=" "
@@ -28,7 +106,7 @@ namespace kerasMLOC{
     export function createSequential(parameter: any, block: any) {
         
         Generator.addCode(`model = keras.Sequential(name="object_classification_model")`)
-        Generator.addCode(`base_model = keras.models.load_model("/root/mindplus/.lib/thirdExtension/liliang-kerasml-thirdex/mobilenet_v2_96.h5",compile=False)`)
+        Generator.addCode(`base_model = keras.models.load_model("/root/mindplus/.lib/thirdExtension/liliang-kerasmloc-thirdex/mobilenet_v2_96.h5",compile=False)`)
         Generator.addCode(`base_model.trainable = False`)
         Generator.addCode(`model.add(base_model)`)
         Generator.addCode(`model.add(keras.layers.Dense(100, activation='relu'))`)
@@ -69,12 +147,15 @@ namespace kerasMLOC{
         let path=parameter.PATH.code;
         Generator.addImport(`import tensorflow as tf\nfrom tensorflow import keras\nimport numpy as np`)
         
-        Generator.addCode(`model = tf.keras.models.load_model(${path})`)
-
- 
+        Generator.addCode(`print("loading model...")
+model = tf.keras.models.load_model(${path})
+print("model loaded!")`)
     }
     
+    //% block="---"
+    export function noteSep5() {
 
+    }
     //% block="加载预测图片 通过路径[PATH]" blockType="command"
     //% PATH.shadow="string" PATH.defl="/root/dataset_object_classification/01Apple/2.jpg"
     export function loadImg(parameter: any, block: any) {
@@ -84,20 +165,74 @@ namespace kerasMLOC{
         Generator.addCode(`img_array = keras.applications.mobilenet_v2.preprocess_input(img_array)`)
         Generator.addCode(`img_array = tf.expand_dims(img_array/255.0, 0)`)
     }
-
+/*
     //% block="加载预测图片 通过视频帧[GRAB]" blockType="command"
     //% GRAB.shadow="normal" GRAB.defl="grab"
     export function loadVideo(parameter: any, block: any) {
         let grab=parameter.GRAB.code;
-        Generator.addCode(`img_src = tf.image.resize(${grab}, (96, 96))`)
+
+        Generator.addCode(`img_src = tf.image.resize(img_src, (96, 96))`)
         Generator.addCode(`img_array = keras.preprocessing.image.img_to_array(img_src)`)
         Generator.addCode(`img_array = tf.expand_dims(img_array, 0)`)
         Generator.addCode(`img_array = img_array/255.0`)
         
     }
+*/    
+    //% block="---"
+    export function noteSep4() {
+
+    }
+
+    //% block="加载预测图片 通过读取摄像头实时画面" blockType="command"
+    export function readandcapcapture(parameter: any, block: any) {
+
+        Generator.addCode(`cv2.waitKey(5)
+cvimg_success, img_src = cap.read()
+cvimg_h, cvimg_w, cvimg_c = img_src.shape
+cvimg_w1 = cvimg_h*240//320
+cvimg_x1 = (cvimg_w-cvimg_w1)//2
+img_src = img_src[:, cvimg_x1:cvimg_x1+cvimg_w1]
+img_src = cv2.resize(img_src, (240, 320))
+cvimg_src=img_src.copy()
+img_resize = tf.image.resize(cvimg_src, (96, 96))
+img_array = keras.preprocessing.image.img_to_array(img_resize)
+img_array = tf.expand_dims(img_array, 0)
+img_array = img_array/255.0
+#cv2.imshow('cvwindow', img_src)
+`)
 
 
+    }
 
+    
+    //% block="在摄像头画面上显示文字[TEXT] 颜色R[R]G[G]B[B] 坐标X[X]Y[Y]" blockType="command"
+    //% TEXT.shadow="string" TEXT.defl="id1"
+    //% R.shadow="range"   R.params.min=0    R.params.max=255    R.defl=50
+    //% G.shadow="range"   G.params.min=0    G.params.max=255    G.defl=200
+    //% B.shadow="range"   B.params.min=0    B.params.max=255    B.defl=0
+    //% X.shadow="number"   X.defl="10"
+    //% Y.shadow="number"   Y.defl="20"
+    export function drawText(parameter: any, block: any) {
+        let txt=parameter.TEXT.code;
+        let r=parameter.R.code;
+        let g=parameter.G.code;
+        let b=parameter.B.code;
+        let x=parameter.X.code;
+        let y=parameter.Y.code;
+ 
+        Generator.addCode(`cv2.putText(img_src, ${txt}, (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
+    }
+
+    //% block="将摄像头画面显示到屏幕上" blockType="command"
+    export function imShowVideo(parameter: any, block: any) {
+        Generator.addCode(`cv2.imshow('cvwindow', img_src)\ncv2.waitKey(5)`)
+    }
+  
+
+    //% block="---"
+    export function noteSep3() {
+
+    }
     //% block="预测加载的图像 返回识别结果索引" blockType="reporter"
     export function predict(parameter: any, block: any) {
         Generator.addCode(`model.predict(img_array).argmax()`)
