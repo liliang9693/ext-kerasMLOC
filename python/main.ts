@@ -220,7 +220,7 @@ img_array = img_array/255.0
         let x=parameter.X.code;
         let y=parameter.Y.code;
  
-        Generator.addCode(`cv2.putText(img_src, ${txt}, (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
+        Generator.addCode(`cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
     }
 
     //% block="将摄像头画面显示到屏幕上" blockType="command"
