@@ -24,8 +24,9 @@ namespace kerasMLOC{
         Generator.addCode(`cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)`)
         Generator.addCode(`cv2.namedWindow('cvwindow',cv2.WND_PROP_FULLSCREEN)`)
         Generator.addCode(`cv2.setWindowProperty('cvwindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)`)
-        Generator.addCode(`while not cap.isOpened():
-    continue`)     
+        Generator.addCode(`pic_count = 0`)             
+    Generator.addCode(`while not cap.isOpened():
+    continue`)    
     }
 
 
@@ -63,15 +64,17 @@ cv2.imshow('cvwindow', cvimg_src)
     img_dir_path ="${path}/${name}/"
     img_name_path=str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f'))+".png"
     img_save_path=img_dir_path+img_name_path
-    print("save image:",img_save_path)
+    print("save picture path:",img_save_path)
     try:
-        if not os.path.exists(img_save_path):
+        if not os.path.exists(img_dir_path):
             print("The folder does not exist,created automatically")
             os.system("mkdir -p ${path}/${name}/")
     except IOError:
         print("IOError,created automatically")
-        os.system("mkdir -p ${path}/${name}/")
+        break
     cv2.imwrite(img_save_path, img_src)
+    pic_count=pic_count+1
+    print("save picture count:"+str(pic_count))
     rectangular = np.array([ [5,5],[5,40], [232,40], [232,5] ])
     cv2.fillConvexPoly(cvimg_src, rectangular, (233, 236, 239))
     cv2.putText(cvimg_src, '${name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (50, 200, 0), 2)
