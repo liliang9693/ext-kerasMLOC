@@ -226,6 +226,56 @@ img_array = img_array/255.0
         Generator.addCode(`cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
     }
 
+    //% block="在摄像头画面上显示汉字[TEXT] 颜色[COLOR] 坐标X[X]Y[Y] 字号[FSIZE]" blockType="command"
+    //% TEXT.shadow="string" TEXT.defl="分类1"
+    //% COLOR.shadow="colorPalette" 
+    //% X.shadow="number"   X.defl="10"
+    //% Y.shadow="number"   Y.defl="20"
+    //% FSIZE.shadow="number"   FSIZE.defl="40"
+    export function drawChinese(parameter: any, block: any) {
+        let txt=parameter.TEXT.code;
+        let color=parameter.COLOR.code;
+        let x=parameter.X.code;
+        let y=parameter.Y.code;
+        let fsize=parameter.FSIZE.code;
+
+        var r = 0;
+        var g = 0;
+        var b = 0;
+        try {
+            if ( color.length == 8 ) {//分别截取RGB值然后转换为数字值
+                r = parseInt(color.substring(2, 4), 16);
+                g = parseInt(color.substring(4, 6), 16);
+                b = parseInt(color.substring(6, 8), 16);
+            }
+        } catch(e) {
+            return '';
+        }
+
+        
+        Generator.addImport(`from PIL import ImageFont, ImageDraw, Image\nimport site\nimport os`)
+        Generator.addDeclaration("drawChineseFunction",`def drawChinese(text,x,y,size,r, g, b, a,img):
+    site_packages_path = site.getsitepackages()
+    for pack_path in site_packages_path:
+        font_path=f"{pack_path}/unihiker/HYQiHei_50S.ttf"
+        if os.path.isfile(font_path):
+            #print(font_path,",Y")
+            break
+        else:
+            #print(font_path,",N")
+            font_path="HYQiHei_50S.ttf"    
+    font = ImageFont.truetype(font_path, size)
+    img_pil = Image.fromarray(img)
+    draw = ImageDraw.Draw(img_pil)
+    draw.text((x,y), text, font=font, fill=(b, g, r, a))
+    frame = np.array(img_pil)
+    return frame
+`)
+
+    Generator.addCode(`img_src = drawChinese(text=${txt},x=${x},y=${y},size=${fsize},r=${r},g=${g},b=${b},a=50,img=img_src)`)     
+    }
+
+   
     //% block="将摄像头画面显示到屏幕上" blockType="command"
     export function imShowVideo(parameter: any, block: any) {
         Generator.addCode(`cv2.imshow('cvwindow', img_src)\ncv2.waitKey(5)`)
@@ -236,14 +286,20 @@ img_array = img_array/255.0
     export function noteSep3() {
 
     }
-    //% block="预测加载的图像 返回识别结果索引" blockType="reporter"
-    export function predict(parameter: any, block: any) {
-        Generator.addCode(`model.predict(img_array).argmax()`)
+    //% block="预测加载的图像 存入识别结果" blockType="command"
+    export function predictPercentageResult(parameter: any, block: any) {
+        Generator.addCode(`predict_result=model.predict(img_array)`)
+
     } 
 
-    //% block="预测加载的图像 返回识别结果置信度" blockType="reporter"
+    //% block="从识别结果中取索引" blockType="reporter"
+    export function predict(parameter: any, block: any) {
+        Generator.addCode(`predict_result.argmax()`)
+    } 
+
+    //% block="从识别结果中取置信度" blockType="reporter"
     export function predictPercentage(parameter: any, block: any) {
-        Generator.addCode(`model.predict(img_array)[0][model.predict(img_array).argmax()]`)
+        Generator.addCode(`predict_result[0][predict_result.argmax()]`)
 
     } 
 
