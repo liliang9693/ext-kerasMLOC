@@ -223,35 +223,6 @@ img_array = img_array/255.0
         let x=parameter.X.code;
         let y=parameter.Y.code;
  
-        Generator.addCode(`cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
-    }
-
-    //% block="在摄像头画面上显示汉字[TEXT] 颜色[COLOR] 坐标X[X]Y[Y] 字号[FSIZE]" blockType="command"
-    //% TEXT.shadow="string" TEXT.defl="分类1"
-    //% COLOR.shadow="colorPalette" 
-    //% X.shadow="number"   X.defl="10"
-    //% Y.shadow="number"   Y.defl="20"
-    //% FSIZE.shadow="number"   FSIZE.defl="40"
-    export function drawChinese(parameter: any, block: any) {
-        let txt=parameter.TEXT.code;
-        let color=parameter.COLOR.code;
-        let x=parameter.X.code;
-        let y=parameter.Y.code;
-        let fsize=parameter.FSIZE.code;
-
-        var r = 0;
-        var g = 0;
-        var b = 0;
-        try {
-            if ( color.length == 8 ) {//分别截取RGB值然后转换为数字值
-                r = parseInt(color.substring(2, 4), 16);
-                g = parseInt(color.substring(4, 6), 16);
-                b = parseInt(color.substring(6, 8), 16);
-            }
-        } catch(e) {
-            return '';
-        }
-
         
         Generator.addImport(`from PIL import ImageFont, ImageDraw, Image\nimport site\nimport os`)
         Generator.addDeclaration("drawChineseFunction",`def drawChinese(text,x,y,size,r, g, b, a,img):
@@ -272,8 +243,15 @@ img_array = img_array/255.0
     return frame
 `)
 
-    Generator.addCode(`img_src = drawChinese(text=${txt},x=${x},y=${y},size=${fsize},r=${r},g=${g},b=${b},a=50,img=img_src)`)     
+    Generator.addCode(`
+try:
+    img_src = drawChinese(text=${txt},x=${x},y=${y},size=25,r=${r},g=${g},b=${b},a=50,img=img_src)
+except Exception as e:
+    print(e)
+    cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)
+`)     
     }
+
 
    
     //% block="将摄像头画面显示到屏幕上" blockType="command"
