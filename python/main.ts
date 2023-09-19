@@ -17,16 +17,16 @@ namespace kerasMLOC{
         let num=parameter.CAMNUM.code;
  
         Generator.addImport(`import cv2\nimport numpy as np`)
-        
-        Generator.addCode(`cap = cv2.VideoCapture(${num})`)
-        Generator.addCode(`cap.set(cv2.CAP_PROP_FRAME_WIDTH, 240)`)
-        Generator.addCode(`cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 320)`)
-        Generator.addCode(`cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)`)
-        Generator.addCode(`cv2.namedWindow('cvwindow',cv2.WND_PROP_FULLSCREEN)`)
-        Generator.addCode(`cv2.setWindowProperty('cvwindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)`)
-        Generator.addCode(`pic_count = 0`)             
-    Generator.addCode(`while not cap.isOpened():
-    continue`)    
+        Generator.addCode(`cap = cv2.VideoCapture(${num})
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 240)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 320)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+cv2.namedWindow('cvwindow',cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty('cvwindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+pic_count = 0
+while not cap.isOpened():
+    continue`)   
+
     }
 
 
@@ -60,6 +60,40 @@ cv2.imshow('cvwindow', cvimg_src)
         name=replaceQuotationMarks(name)
 
         Generator.addImport(`import datetime\nimport os`)
+        Generator.addImport(`from PIL import ImageFont, ImageDraw, Image\nimport site\nimport os`)
+        Generator.addDeclaration("drawChineseFunction",`def drawChinese(text,x,y,size,r, g, b, a,img):
+    #获取字体
+    site_packages_path = site.getsitepackages()
+    for pack_path in site_packages_path:
+        font_path=f"{pack_path}/unihiker/HYQiHei_50S.ttf"
+        if os.path.isfile(font_path):
+            #print(font_path,",Y")
+            break
+        else:
+            #print(font_path,",N")
+            font_path="HYQiHei_50S.ttf"
+    font = ImageFont.truetype(font_path, size)
+    #创建透明图
+    img_pil = Image.fromarray(img)
+    draw = ImageDraw.Draw(img_pil)
+    # 获取文本的宽度和高度
+    text_width, text_height = draw.textsize(text, font=font)
+    # 计算矩形区域的坐标
+    rect_left = x
+    rect_top = y
+    rect_right = x + text_width
+    rect_bottom = rect_top + text_height
+    # 创建半透明灰色底
+    rect_color = (128, 128, 128, 100)
+    draw.rectangle([rect_left, rect_top, rect_right, rect_bottom], fill=rect_color)
+    #绘制文字
+    draw.text((x,y), text, font=font, fill=(b, g, r, a),stroke_width=0)
+    frame = np.array(img_pil)
+    return frame
+`)
+
+
+
         Generator.addCode(`if cv2.waitKey(10) == ord('${button}'):
     img_dir_path ="${path}/${name}/"
     img_name_path=str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f'))+".png"
@@ -77,7 +111,11 @@ cv2.imshow('cvwindow', cvimg_src)
     print("save picture count:"+str(pic_count))
     rectangular = np.array([ [5,5],[5,40], [232,40], [232,5] ])
     cv2.fillConvexPoly(cvimg_src, rectangular, (233, 236, 239))
-    cv2.putText(cvimg_src, '${name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (50, 200, 0), 2)
+    try:
+        cvimg_src = drawChinese(text='${name}',x=10,y=30,size=25,r=0,g=255,b=0,a=255,img=img_src)
+    except Exception as e:
+        print(e)
+        cv2.putText(cvimg_src, '${name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
     cv2.rectangle(cvimg_src, (5,5,230,310), (0,255,0), 2)
     cv2.imshow('cvwindow', cvimg_src)
     cv2.waitKey(5)
@@ -98,9 +136,13 @@ cv2.imshow('cvwindow', cvimg_src)
         let path=parameter.PATH.code;
         let cla=parameter.CLA.code;
         Generator.addImport(`import tensorflow as tf\nfrom tensorflow import keras\nimport numpy as np`)
-        Generator.addCode(`datagen = keras.preprocessing.image.ImageDataGenerator(preprocessing_function=keras.applications.mobilenet_v2.preprocess_input)`)
-        Generator.addCode(`train_batches = datagen.flow_from_directory(directory=${path},shuffle=True,target_size=(96,96),batch_size=10)`)
-        Generator.addCode(`class_quantity = ${cla}`)
+
+        Generator.addCode(`datagen = keras.preprocessing.image.ImageDataGenerator(preprocessing_function=keras.applications.mobilenet_v2.preprocess_input)
+train_batches = datagen.flow_from_directory(directory=${path},shuffle=True,target_size=(96,96),batch_size=10)
+class_quantity = ${cla}
+`)
+
+
 
  
     }
@@ -108,12 +150,14 @@ cv2.imshow('cvwindow', cvimg_src)
     //% block="创建神经网络模型 预训练模型为MobileNet V2 " blockType="command"
     export function createSequential(parameter: any, block: any) {
         
-        Generator.addCode(`model = keras.Sequential(name="object_classification_model")`)
-        Generator.addCode(`base_model = keras.models.load_model("/root/mindplus/.lib/thirdExtension/liliang-kerasmloc-thirdex/mobilenet_v2_96.h5",compile=False)`)
-        Generator.addCode(`base_model.trainable = False`)
-        Generator.addCode(`model.add(base_model)`)
-        Generator.addCode(`model.add(keras.layers.Dense(100, activation='relu'))`)
-        Generator.addCode(`model.add(keras.layers.Dense(class_quantity, activation='softmax'))`)
+        Generator.addCode(`model = keras.Sequential(name="object_classification_model")
+base_model = keras.models.load_model("/root/mindplus/.lib/thirdExtension/liliang-kerasmloc-thirdex/mobilenet_v2_96.h5",compile=False)
+base_model.trainable = False
+model.add(base_model)
+model.add(keras.layers.Dense(100, activation='relu'))
+model.add(keras.layers.Dense(class_quantity, activation='softmax'))
+`)
+
 
     }
 
@@ -163,10 +207,13 @@ print("model loaded!")`)
     //% PATH.shadow="string" PATH.defl="/root/dataset_object_classification/01Apple/2.jpg"
     export function loadImg(parameter: any, block: any) {
         let path=parameter.PATH.code;
-        Generator.addCode(`img_src = keras.preprocessing.image.load_img(${path}, target_size=(96, 96))`)
-        Generator.addCode(`img_array = keras.preprocessing.image.img_to_array(img_src)`)
-        Generator.addCode(`img_array = keras.applications.mobilenet_v2.preprocess_input(img_array)`)
-        Generator.addCode(`img_array = tf.expand_dims(img_array/255.0, 0)`)
+        Generator.addCode(`img_src = keras.preprocessing.image.load_img(${path}, target_size=(96, 96))
+img_array = keras.preprocessing.image.img_to_array(img_src)
+img_array = keras.applications.mobilenet_v2.preprocess_input(img_array)
+img_array = tf.expand_dims(img_array/255.0, 0)
+        `)
+
+
     }
 /*
     //% block="加载预测图片 通过视频帧[GRAB]" blockType="command"
@@ -226,6 +273,7 @@ img_array = img_array/255.0
         
         Generator.addImport(`from PIL import ImageFont, ImageDraw, Image\nimport site\nimport os`)
         Generator.addDeclaration("drawChineseFunction",`def drawChinese(text,x,y,size,r, g, b, a,img):
+    #获取字体
     site_packages_path = site.getsitepackages()
     for pack_path in site_packages_path:
         font_path=f"{pack_path}/unihiker/HYQiHei_50S.ttf"
@@ -234,22 +282,32 @@ img_array = img_array/255.0
             break
         else:
             #print(font_path,",N")
-            font_path="HYQiHei_50S.ttf"    
+            font_path="HYQiHei_50S.ttf"
     font = ImageFont.truetype(font_path, size)
+    #创建透明图
     img_pil = Image.fromarray(img)
     draw = ImageDraw.Draw(img_pil)
-    draw.text((x,y), text, font=font, fill=(b, g, r, a))
+    # 获取文本的宽度和高度
+    text_width, text_height = draw.textsize(text, font=font)
+    # 计算矩形区域的坐标
+    rect_left = x
+    rect_top = y
+    rect_right = x + text_width
+    rect_bottom = rect_top + text_height
+    # 创建半透明灰色底
+    rect_color = (128, 128, 128, 100)
+    draw.rectangle([rect_left, rect_top, rect_right, rect_bottom], fill=rect_color)
+    #绘制文字
+    draw.text((x,y), text, font=font, fill=(b, g, r, a),stroke_width=0)
     frame = np.array(img_pil)
     return frame
 `)
 
-    Generator.addCode(`
-try:
-    img_src = drawChinese(text=${txt},x=${x},y=${y},size=25,r=${r},g=${g},b=${b},a=50,img=img_src)
+    Generator.addCode(`try:
+    img_src = drawChinese(text=str(${txt}),x=${x},y=${y},size=25,r=${r},g=${g},b=${b},a=50,img=img_src)
 except Exception as e:
     print(e)
-    cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)
-`)     
+    cv2.putText(img_src, str(${txt}), (${x}, ${y}), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (${r}, ${g}, ${b}), 2)`)     
     }
 
 
